@@ -1,0 +1,49 @@
+---
+output: html_fragment
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(ggplot2)
+library(DT)
+
+set.seed(101)
+dates <- seq.Date(from = as.Date("2026-01-01"), by = "day", length.out = 60)
+base_p <- 180
+
+aapl_data <- data.frame(
+  Date = dates,
+  Open = base_p + cumsum(rnorm(60, 0, 1.2)),
+  High = numeric(60),
+  Low = numeric(60),
+  Close = numeric(60),
+  Volume = sample(5000000:15000000, 60)
+)
+
+aapl_data$High <- aapl_data$Open + runif(60, 0.5, 3.0)
+aapl_data$Low <- aapl_data$Open - runif(60, 0.5, 3.0)
+aapl_data$Close <- aapl_data$Open + rnorm(60, 0, 1.0)
+
+datatable(head(aapl_data, 10), options = list(dom = 't', pageLength = 5), rownames = FALSE)
+
+summary_stats <- data.frame(
+  Metric = c("Mean Close Price", "Max High Price", "Min Low Price", "Avg Daily Volume"),
+  Value = c(
+    round(mean(aapl_data$Close), 2),
+    round(max(aapl_data$High), 2),
+    round(min(aapl_data$Low), 2),
+    format(mean(aapl_data$Volume), big.mark = ",")
+  )
+)
+
+knitr::kable(summary_stats, caption = "Key Financial Performance Indicators")
+
+ggplot(aapl_data, aes(x = Date)) +
+  geom_ribbon(aes(ymin = Low, ymax = High), fill = "#1abc9c", alpha = 0.2) +
+  geom_line(aes(y = Close), color = "#2c3e50", size = 1.1) +
+  theme_minimal(base_size = 13) +
+  labs(
+    subtitle = "Shaded region indicates Daily High-Low Spread; Line indicates Close Price",
+    x = "Trading Date",
+    y = "Price ($ USD)"
+  )

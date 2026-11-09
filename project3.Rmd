@@ -1,0 +1,51 @@
+---
+output: html_fragment
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(ggplot2)
+library(DT)
+
+set.seed(303)
+n_assets <- 4
+n_portfolios <- 500
+
+# Simulate multi-asset portfolio simulations for Efficient Frontier
+returns_mat <- matrix(rnorm(n_portfolios * n_assets, mean = 0.0005, sd = 0.02), ncol = n_assets)
+port_returns <- apply(returns_mat, 1, sum) * 252
+port_volatility <- apply(returns_mat, 1, sd) * sqrt(252)
+sharpe_ratio <- port_returns / port_volatility
+
+efficient_df <- data.frame(
+  Return = round(port_returns, 4),
+  Volatility = round(port_volatility, 4),
+  Sharpe = round(sharpe_ratio, 4)
+)
+
+datatable(head(efficient_df, 10), options = list(dom = 't', pageLength = 5), rownames = FALSE, caption = "Table 1: Simulated Portfolio Allocations")
+
+summary_opt <- data.frame(
+  Metric = c("Simulated Portfolios", "Max Sharpe Ratio", "Peak Annual Return", "Minimum Volatility"),
+  Value = c(
+    n_portfolios, 
+    round(max(sharpe_ratio), 2), 
+    paste0(round(max(port_returns)*100, 2), "%"), 
+    paste0(round(min(port_volatility)*100, 2), "%")
+  )
+)
+
+datatable(summary_opt, options = list(dom = 't'), rownames = FALSE, caption = "Table 2: Modern Portfolio Theory Optimization Metrics")
+
+ggplot(efficient_df, aes(x = Volatility, y = Return, color = Sharpe)) +
+  geom_point(size = 2.2, alpha = 0.85) +
+  scale_color_gradient(low = "#3498db", high = "#e74c3c") +
+  theme_minimal(base_size = 13) +
+  labs(
+    title = "Efficient Frontier & Sharpe Ratio Distribution",
+    subtitle = "Monte Carlo simulation of optimal asset weight allocations",
+    x = "Annualized Volatility (Risk)",
+    y = "Expected Annual Return",
+    color = "Sharpe"
+  ) +
+  theme(legend.position = "right")
